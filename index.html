@@ -1021,5 +1021,75 @@ if (WHATSAPP) {
   b.style.display = 'table';
 }
 </script>
+  <!-- Background Music (Loop at 60% Volume) -->
+<audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
+
+<button id="musicToggle" aria-label="Toggle Music" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;z-index:250;width:38px;height:38px;border-radius:50%;border:1.5px solid rgba(212,168,83,0.75);background:rgba(42,5,16,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#f6e3a1;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.28);padding:0;outline:none">
+  ♪
+</button>
+
+<script>
+(function() {
+  const music = document.getElementById('bgMusic');
+  const btn = document.getElementById('musicToggle');
+  music.volume = 0.6; // 60% volume
+  let started = false;
+  let userPaused = false;
+
+  function updateIcon() {
+    btn.textContent = music.paused ? '🔇' : '♪';
+    btn.style.opacity = music.paused ? '0.65' : '1';
+  }
+
+  function startMusic() {
+    if (started || userPaused) return;
+    music.volume = 0.6;
+    const playPromise = music.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        started = true;
+        updateIcon();
+        ['click', 'touchstart', 'touchend', 'scroll', 'keydown'].forEach(ev =>
+          document.removeEventListener(ev, startMusic)
+        );
+      }).catch(() => {});
+    }
+  }
+
+  // Start automatically on first tap (e.g., tapping the envelope or scrolling)
+  ['click', 'touchstart', 'touchend', 'scroll', 'keydown'].forEach(ev =>
+    document.addEventListener(ev, startMusic, { passive: true })
+  );
+
+  // Try immediate playback if browser allows it
+  startMusic();
+
+  // Manual Mute / Play toggle button in top-right corner
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    music.volume = 0.6;
+    if (music.paused) {
+      userPaused = false;
+      music.play();
+      started = true;
+    } else {
+      userPaused = true;
+      music.pause();
+    }
+    updateIcon();
+  });
+
+  // Pause automatically if guest switches apps or locks phone
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden && !music.paused) {
+      music.pause();
+    } else if (!document.hidden && started && !userPaused) {
+      music.volume = 0.6;
+      music.play().catch(() => {});
+    }
+  });
+})();
+</script>
+  
 </body>
 </html>
